@@ -1,6 +1,9 @@
 package semverpair
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // Version represents a semver version.
 type Version struct {
@@ -20,38 +23,68 @@ func (v Version) String() string {
 	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
+// This makes sure that all minor and patch versions start out with an unsigned int (9)
+// and that most of them will be four digitis long
+const addend = 9000
+
 // Encode encodes two semver versions that share the same major version
 // into one.
 // The encoded version can be decoded back to the originals using DecodeSemver
 // as long as minor2 and patch2 is less than 100.
 func Encode(pair Pair) Version {
+	minorStr := fmt.Sprintf("9%02d%02d", pair.First.Minor, pair.Second.Minor)
+	patchStr := fmt.Sprintf("9%02d%02d", pair.First.Patch, pair.Second.Patch)
+	minor := mustAtoi(minorStr)
+	patch := mustAtoi(patchStr)
+
+	// v3.1.0", "v3.0.0", "v3.9100.9000
 	return Version{
 		Major: pair.First.Major,
-		Minor: (pair.First.Minor * 100) + pair.Second.Minor,
-		Patch: (pair.First.Patch * 100) + pair.Second.Patch,
+		Minor: minor,
+		Patch: patch,
 	}
 }
 
 // Decode decodes the given semver triplet into the original
 // version pair.
-// This only works if the original pair's second version's minor and patch version
-// was less than 100.
 func Decode(v Version) Pair {
-	minor1 := (v.Minor / 100)
-	patch1 := (v.Patch / 100)
-	minor2 := v.Minor - (minor1 * 100)
-	patch2 := v.Patch - (patch1 * 100)
+	minorStr := strconv.Itoa(v.Minor)
+	patchStr := strconv.Itoa(v.Patch)
+
+	if len(minorStr) != 5 {
+		panic("minor version is not 4 digits long")
+	}
+
+	if minorStr[0] != '9' {
+		panic("minor version must start with 9")
+	}
+
+	if len(patchStr) != 5 {
+		panic("patch version is not 4 digits long")
+	}
+
+	if patchStr[0] != '9' {
+		panic("patch version must start with 9")
+	}
 
 	return Pair{
 		First: Version{
 			Major: v.Major,
-			Minor: minor1,
-			Patch: patch1,
+			Minor: mustAtoi(minorStr[1:3]),
+			Patch: mustAtoi(patchStr[1:3]),
 		},
 		Second: Version{
 			Major: v.Major,
-			Minor: minor2,
-			Patch: patch2,
+			Minor: mustAtoi(minorStr[3:]),
+			Patch: mustAtoi(patchStr[3:]),
 		},
 	}
+}
+
+func mustAtoi(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return i
 }

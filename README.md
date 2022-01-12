@@ -10,4 +10,9 @@ Features:
 * It should be possible to programmatially decode back to the originals in all practical scenarios.
 * A minor or patch increment from either of the two versions should result in a version that is _greater than_ the previous version.
 
-Have a look at the test code in this repository for some examples. Also see [this module](https://github.com/gohugoio/hugo-mod-jslibs-dist/releases/tag/alpinejs%2Fv3.400.200); here, the upstream version is `v3.4.2` and the combined version `v3.400.200`. If the wrapper needs to make configuration changes it may release a new version, incrementing either the minor or patch version, e.g.: `v3.400.201`.
+The minor and patch version is represented by the digit 9 and then 4 digits, 2 digits for each version, e.g.:
+
+* `v3.0.0 + v3.0.0 = v3.90000.90000`
+* `v3.1.0 + v3.0.0" = v3.90100.90000`
+* `v3.6.5 + v3.99.99 = v3.90699.90599`
+

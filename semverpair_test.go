@@ -1,6 +1,7 @@
 package semverpair
 
 import (
+	"math/rand"
 	"strings"
 	"testing"
 
@@ -57,6 +58,27 @@ func TestSemverPair(t *testing.T) {
 		basePair.Second.Minor++
 		encodeAndCheckGreaterThan(basePair, lesserVersion)
 
+	}
+}
+
+func TestRoundtrip(t *testing.T) {
+	c := qt.New(t)
+
+	ver := splitSemver("v3.1.0")
+
+	for i := 1; i <= 50000; i++ {
+		v1, v2 := ver, ver
+		v1.Minor = rand.Intn(i)
+		v1.Patch = rand.Intn(i)
+		v2.Minor = rand.Intn(i)
+		v2.Patch = rand.Intn(i)
+
+		input := Pair{First: v1, Second: v2}
+
+		encoded := Encode(input)
+		decoded := Decode(encoded)
+
+		c.Assert(decoded, qt.Equals, input)
 	}
 }
 

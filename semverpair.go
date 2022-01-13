@@ -2,7 +2,9 @@ package semverpair
 
 import (
 	"fmt"
+	"math"
 	"strconv"
+	"strings"
 )
 
 // Version represents a semver version.
@@ -23,26 +25,39 @@ func (v Version) String() string {
 	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
-// This makes sure that all minor and patch versions start out with an unsigned int (9)
-// and that most of them will be four digitis long
-const addend = 9000
-
 // Encode encodes two semver versions that share the same major version
 // into one.
-// The encoded version can be decoded back to the originals using DecodeSemver
-// as long as minor2 and patch2 is less than 100.
+// The encoded version can be decoded back to the originals using Decode.
 func Encode(pair Pair) Version {
-	minorStr := fmt.Sprintf("9%02d%02d", pair.First.Minor, pair.Second.Minor)
-	patchStr := fmt.Sprintf("9%02d%02d", pair.First.Patch, pair.Second.Patch)
+	widthMinor := maxWidth(pair.First.Minor, pair.Second.Minor)
+	widthPatch := maxWidth(pair.First.Patch, pair.Second.Patch)
+	formatMinor := strings.ReplaceAll("x%0xd%0xd", "x", strconv.Itoa(widthMinor))
+	formatPatch := strings.ReplaceAll("x%0xd%0xd", "x", strconv.Itoa(widthPatch))
+	minorStr := fmt.Sprintf(formatMinor, pair.First.Minor, pair.Second.Minor)
+	patchStr := fmt.Sprintf(formatPatch, pair.First.Patch, pair.Second.Patch)
 	minor := mustAtoi(minorStr)
 	patch := mustAtoi(patchStr)
 
-	// v3.1.0", "v3.0.0", "v3.9100.9000
 	return Version{
 		Major: pair.First.Major,
 		Minor: minor,
 		Patch: patch,
 	}
+}
+
+func maxWidth(n1, n2 int) int {
+	w1, w2 := width(n1), width(n2)
+	if w1 > w2 {
+		return w1
+	}
+	return w2
+}
+
+func width(n int) int {
+	if n == 0 {
+		return 1
+	}
+	return int(math.Log10(float64(n)) + 1)
 }
 
 // Decode decodes the given semver triplet into the original
@@ -51,32 +66,19 @@ func Decode(v Version) Pair {
 	minorStr := strconv.Itoa(v.Minor)
 	patchStr := strconv.Itoa(v.Patch)
 
-	if len(minorStr) != 5 {
-		panic("minor version is not 4 digits long")
-	}
-
-	if minorStr[0] != '9' {
-		panic("minor version must start with 9")
-	}
-
-	if len(patchStr) != 5 {
-		panic("patch version is not 4 digits long")
-	}
-
-	if patchStr[0] != '9' {
-		panic("patch version must start with 9")
-	}
+	widthMinor := mustAtoi(minorStr[:1])
+	widthPatch := mustAtoi(patchStr[:1])
 
 	return Pair{
 		First: Version{
 			Major: v.Major,
-			Minor: mustAtoi(minorStr[1:3]),
-			Patch: mustAtoi(patchStr[1:3]),
+			Minor: mustAtoi(minorStr[1 : widthMinor+1]),
+			Patch: mustAtoi(patchStr[1 : widthPatch+1]),
 		},
 		Second: Version{
 			Major: v.Major,
-			Minor: mustAtoi(minorStr[3:]),
-			Patch: mustAtoi(patchStr[3:]),
+			Minor: mustAtoi(minorStr[widthMinor+1:]),
+			Patch: mustAtoi(patchStr[widthPatch+1:]),
 		},
 	}
 }

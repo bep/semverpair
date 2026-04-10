@@ -1,26 +1,28 @@
 
-This library speficies a simple **encoding and decoding scheme** to combine **two semver versions** into one.
+This library implements a simple **encoding and decoding scheme** to combine **two semver versions** into one.
 
-My intended use for this is as a versioning scheme for Hugo Modules that are wrappers of upstream libraries. The wrapper and library have diverging release cycles, and we want to maintain the upstream version info, so we cannot just use the upstream version as is.
+My intended use for this is as a versioning scheme for Hugo Modules that are wrappers of upstream libraries. The wrapper and the library have diverging release cycles, and we want to maintain the upstream version info, so we cannot just use the upstream version as is.
 
 Features:
 
 * The upstream library controls the major version.
 * It should be easy to determine the upstream version just by looking at it.
-* It should always be possible to programmatially decode back to the originals.
+* It should always be possible to programmatically decode back to the originals.
 * A minor or patch increment from either of the two versions should result in a version that is _greater than_ the previous version.
 
-The minor and patch version:
+## Encoding
 
-* Starts out with one digit (width) telling how many digits each version holds.
-* Then each version is printed padded with leading zeros.
+The minor and patch fields are each encoded as:
 
-Some examples a width of 2 digits per version:
+* A leading digit (the _width_) telling how many digits each version number occupies.
+* Then the two version numbers, each zero-padded to that width.
+
+Some examples with a width of 2 digits per version:
 
 * `v3.0.0 + v3.0.0 = v3.20000.20000`
-* `v3.1.0 + v3.0.0" = v3.20100.20000`
+* `v3.1.0 + v3.0.0 = v3.20100.20000`
 * `v3.6.5 + v3.99.99 = v3.20699.20599`
 
-If either of the versions reaches 100, the prefix can be incremented:
+If either of the version numbers reaches 100, the width grows to 3:
 
-* `v3.6.5 + v3.99.100 = v3.20699.3005100`
+* `v3.6.5 + v3.99.100 = v3.3006099.3005100`

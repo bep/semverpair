@@ -1,3 +1,4 @@
+>This is now archived. I have moved to a simpler `vX.Y.(Z*1000+W)` encoding scheme for the use cases described below.
 
 This library implements a simple **encoding and decoding scheme** to combine **two semver versions** into one.
 
